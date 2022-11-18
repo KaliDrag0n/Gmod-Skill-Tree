@@ -12,6 +12,12 @@ k_ADD.mod.ST.info.PData = "Data_SkillTree/"
 
 -- [ General ] --
 
+if SERVER then
+	
+	k_ADD.mod.ST.info.PointsPerKill_NPC = 1
+	
+end
+
 -- [ Dev ] --
 
 concommand.Add( "DispUsers", function() PrintTable( k_ADD.mod.ST.data ) end)
@@ -87,6 +93,17 @@ if SERVER then
 		end
 	end
 	
+	local function custom_HandleKill( npc, attacker, inflictor )
+		if attacker:IsPlayer() then
+			if k_ADD.mod.ST.data[attacker:SteamID64()] != nil then
+				k_ADD.mod.ST.data[attacker:SteamID64()].SkillPoints = k_ADD.mod.ST.data[attacker:SteamID64()].SkillPoints + k_ADD.mod.ST.info.PointsPerKill_NPC
+				attacker:PrintMessage( HUD_PRINTTALK, "You gained "..k_ADD.mod.ST.info.PointsPerKill_NPC.." Skill Point(s)!" )
+				kNetMSG_sv( attacker, { Task = "kST_LoadPData", Data = k_ADD.mod.ST.data[attacker:SteamID64()] } )
+			end
+		end
+	end
+	
+	hook.Add( "OnNPCKilled", "kali_PlayerHasKilled", function( npc, attacker, inflictor ) custom_HandleKill( npc, attacker, inflictor ) end )
 	hook.Add( "PlayerChangedTeam", "kali_PlayerHasTeamChanged", function( ply ) timer.Create( "kali_PlayerChangedJob-"..ply:UserID(), 0, 1, function () custom_HandlePlayerSpawn( ply ) end ) end )
 	hook.Add( "PlayerSpawn", "kali_PlayerHasSpawned", function( ply ) custom_HandlePlayerSpawn( ply ) end )
 
@@ -240,7 +257,6 @@ if SERVER then
 				end
 				
 				k_ADD.mod.ST.data[Ply:SteamID64()].Skills[UJN].SkillsPurchased[Tbl.Data.Group][Tbl.Data.Name][Tbl.Data.ID] = true
-				
 				kNetMSG_sv( Ply, { Task = "kST_LoadPData", Data = k_ADD.mod.ST.data[Ply:SteamID64()] } )
 			end
 		end
